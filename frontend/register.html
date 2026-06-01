@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - HU Clearance System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/forms.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo"><span class="logo-icon">🎓</span><span>HU Clearance</span></a>
+            <div class="nav-links" id="navLinks">
+                <a href="index.html">Home</a>
+                <a href="login.html">Login</a>
+                <a href="register.html" class="active">Register</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <h2>Create Account</h2>
+            <p class="subtitle">Register for the Clearance Management System</p>
+            
+            <div class="form-error" id="formError"></div>
+            <div class="form-error" id="formSuccess" style="background:#d1fae5;color:#065f46;"></div>
+            
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="full_name">Full Name</label>
+                    <input type="text" id="full_name" class="form-control" placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" class="form-control" placeholder="Enter university email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Min 6 characters" minlength="6" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Role</label>
+                    <div class="role-selector" id="roleSelector">
+                        <div class="role-card" data-role="student" onclick="selectRole('student')">
+                            <div class="role-icon">🎓</div>
+                            <div class="role-name">Student</div>
+                        </div>
+                        <div class="role-card" data-role="department_head" onclick="selectRole('department_head')">
+                            <div class="role-icon">👨‍🏫</div>
+                            <div class="role-name">Dept Head</div>
+                        </div>
+                        <div class="role-card" data-role="faculty_dean" onclick="selectRole('faculty_dean')">
+                            <div class="role-icon">🏛️</div>
+                            <div class="role-name">Faculty Dean</div>
+                        </div>
+                        <div class="role-card" data-role="dormitory_chief" onclick="selectRole('dormitory_chief')">
+                            <div class="role-icon">🏠</div>
+                            <div class="role-name">Dormitory Chief</div>
+                        </div>
+                        <div class="role-card" data-role="library_chief" onclick="selectRole('library_chief')">
+                            <div class="role-icon">📚</div>
+                            <div class="role-name">Library Chief</div>
+                        </div>
+                        <div class="role-card" data-role="bookstore_keeper" onclick="selectRole('bookstore_keeper')">
+                            <div class="role-icon">📖</div>
+                            <div class="role-name">Bookstore</div>
+                        </div>
+                        <div class="role-card" data-role="student_service_officer" onclick="selectRole('student_service_officer')">
+                            <div class="role-icon">🤝</div>
+                            <div class="role-name">Student Service</div>
+                        </div>
+                        <div class="role-card" data-role="sports_master" onclick="selectRole('sports_master')">
+                            <div class="role-icon">⚽</div>
+                            <div class="role-name">Sports Master</div>
+                        </div>
+                        <div class="role-card" data-role="faculty_assistant_registrar" onclick="selectRole('faculty_assistant_registrar')">
+                            <div class="role-icon">📝</div>
+                            <div class="role-name">FAR</div>
+                        </div>
+                        <div class="role-card" data-role="data_analyst" onclick="selectRole('data_analyst')">
+                            <div class="role-icon">📊</div>
+                            <div class="role-name">Data Analyst</div>
+                        </div>
+                        <div class="role-card" data-role="gate_security" onclick="selectRole('gate_security')">
+                            <div class="role-icon">🔒</div>
+                            <div class="role-name">Gate Security</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedRole" name="role">
+                </div>
+                
+                <!-- Student-specific fields -->
+                <div class="conditional-fields" id="studentFields">
+                    <div class="form-group"><label for="student_id">Student ID</label><input type="text" id="student_id" class="form-control" placeholder="e.g., HU/2023/001"></div>
+                    <div class="form-group"><label for="faculty">Faculty</label><select id="faculty" class="form-control"></select></div>
+                    <div class="form-group"><label for="department">Department</label><input type="text" id="department" class="form-control" placeholder="e.g., Computer Science"></div>
+                    <div class="form-group"><label for="academic_year">Academic Year</label><input type="text" id="academic_year" class="form-control" placeholder="e.g., 2025/2026"></div>
+                    <div class="form-group"><label for="dormitory">Dormitory (Optional)</label><input type="text" id="dormitory" class="form-control" placeholder="e.g., Block A"></div>
+                    <div class="form-group"><label for="phone">Phone (Optional)</label><input type="text" id="phone" class="form-control" placeholder="e.g., 0911223344"></div>
+                </div>
+                
+                <!-- Officer-specific fields -->
+                <div class="conditional-fields" id="officerFields">
+                    <div class="form-group"><label for="officer_id">Officer ID</label><input type="text" id="officer_id" class="form-control" placeholder="e.g., DH001"></div>
+                    <div class="form-group"><label for="unit_name">Unit Name</label><input type="text" id="unit_name" class="form-control" placeholder="e.g., Computer Science Department"></div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width:100%;">Register</button>
+            </form>
+            
+            <div class="form-footer">Already have an account? <a href="login.html">Login here</a></div>
+        </div>
+    </div>
+
+    <footer><p>&copy; 2026 Hawassa University Clearance Management System.</p></footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Populate faculty dropdown
+        const facultySelect = document.getElementById('faculty');
+        CONFIG.FACULTIES.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f;
+            opt.textContent = f;
+            facultySelect.appendChild(opt);
+        });
+
+        let selectedRole = '';
+
+        function selectRole(role) {
+            selectedRole = role;
+            document.getElementById('selectedRole').value = role;
+            
+            // Update UI
+            document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
+            document.querySelector(`[data-role="${role}"]`).classList.add('selected');
+            
+            // Show/hide conditional fields
+            document.getElementById('studentFields').classList.toggle('show', role === 'student');
+            document.getElementById('officerFields').classList.toggle('show', role !== 'student' && role !== 'admin');
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            const errorDiv = document.getElementById('formError');
+            const successDiv = document.getElementById('formSuccess');
+            errorDiv.classList.remove('show');
+            successDiv.classList.remove('show');
+            
+            if (!selectedRole) { errorDiv.textContent = 'Please select a role.'; errorDiv.classList.add('show'); return; }
+            
+            const data = {
+                full_name: document.getElementById('full_name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                password: document.getElementById('password').value,
+                role: selectedRole
+            };
+            
+            if (selectedRole === 'student') {
+                data.student_id = document.getElementById('student_id').value.trim();
+                data.faculty = document.getElementById('faculty').value;
+                data.department = document.getElementById('department').value.trim();
+                data.academic_year = document.getElementById('academic_year').value.trim();
+                data.dormitory_name = document.getElementById('dormitory').value.trim();
+                data.phone = document.getElementById('phone').value.trim();
+            } else {
+                data.officer_id = document.getElementById('officer_id').value.trim();
+                data.unit_name = document.getElementById('unit_name').value.trim();
+            }
+            
+            try {
+                const response = await API.register(data);
+                successDiv.textContent = 'Registration successful! Redirecting to login...';
+                successDiv.classList.add('show');
+                setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.add('show');
+            }
+        }
+    </script>
+</body>
+</html>

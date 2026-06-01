@@ -1,0 +1,93 @@
+/* ============================================
+   RESPONSIVE STYLES
+   ============================================ */
+
+   @media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 1.6rem;
+    }
+    
+    .hero p {
+        font-size: 0.95rem;
+    }
+    
+    .auth-card {
+        padding: 24px;
+    }
+    
+    .role-selector {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .filter-bar {
+        flex-direction: column;
+    }
+    
+    .filter-bar input,
+    .filter-bar select {
+        width: 100%;
+    }
+    
+    .clearance-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .clearance-item-actions {
+        width: 100%;
+    }
+    
+    .clearance-item-actions .btn {
+        flex: 1;
+    }
+    
+    .modal {
+        max-width: 95%;
+        padding: 20px;
+    }
+    
+    table {
+        font-size: 0.8rem;
+    }
+    
+    table th,
+    table td {
+        padding: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .role-selector {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .hero-buttons {
+        flex-direction: column;
+    }
+    
+    .hero-buttons .btn {
+        width: 100%;
+    }
+    
+    .nav-container {
+        padding: 0 12px;
+    }
+    
+    .main-content {
+        padding: 12px;
+    }
+}

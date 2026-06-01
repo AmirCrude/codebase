@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - HU Clearance</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <span class="logo-icon">🎓</span>
+                <span>HU Clearance</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../index.html">Home</a>
+                <a href="#" class="active">Dashboard</a>
+                <div class="nav-user-info" id="userInfo" style="display:none;"></div>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <button class="mobile-toggle" onclick="document.getElementById('navLinks').classList.toggle('active')">☰</button>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3 id="sidebarName">Student Name</h3>
+                <p id="sidebarRole">Student</p>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="#" class="active" onclick="showSection('status')"><span class="icon">📊</span> My Clearance</a></li>
+                <li><a href="#" onclick="showSection('history')"><span class="icon">📋</span> History</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <!-- Status Section -->
+            <div id="section-status">
+                <div class="page-header">
+                    <h2>My Clearance Status</h2>
+                    <p>Track your clearance progress across all verifying officers</p>
+                </div>
+
+                <div class="stats-grid" id="statsGrid"></div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Clearance Items</h3>
+                        <button class="btn btn-accent" onclick="initiateClearance()">Initiate New Clearance</button>
+                    </div>
+                    <div id="clearanceItems">
+                        <div class="loading"><div class="spinner"></div><p>Loading your clearance status...</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div id="section-history" style="display:none;">
+                <div class="page-header">
+                    <h2>Clearance History</h2>
+                    <p>View your past clearance sessions</p>
+                </div>
+                <div id="historyContent">
+                    <div class="loading"><div class="spinner"></div><p>Loading history...</p></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        // Check authentication
+        if (!Auth.checkAuth() || !Auth.checkRole(['student'])) {
+            // Redirect handled by checkAuth
+        }
+
+        const user = Auth.getCurrentUser();
+
+        // Update sidebar
+        document.getElementById('sidebarName').textContent = user.full_name;
+        document.getElementById('sidebarRole').textContent = 'Student';
+
+        // Load clearance status on page load
+        loadClearanceStatus();
+
+        function showSection(section) {
+            document.getElementById('section-status').style.display = section === 'status' ? 'block' : 'none';
+            document.getElementById('section-history').style.display = section === 'history' ? 'block' : 'none';
+            
+            if (section === 'history') {
+                loadHistory();
+            }
+        }
+
+        async function loadClearanceStatus() {
+            const user = Auth.getCurrentUser();
+            try {
+                const response = await API.getMyClearanceStatus(user.id);
+                const sessions = response.data;
+                
+                if (sessions.length === 0) {
+                    document.getElementById('clearanceItems').innerHTML = `
+                        <div style="text-align:center; padding: 40px;">
+                            <p style="color: #6b7280; margin-bottom: 16px;">No active clearance session.</p>
+                            <button class="btn btn-accent" onclick="initiateClearance()">Initiate Clearance</button>
+                        </div>`;
+                    document.getElementById('statsGrid').innerHTML = '';
+                    return;
+                }
+
+                const latestSession = sessions[0];
+                const items = latestSession.items || [];
+                
+                // Stats
+                const total = items.length;
+                const cleared = items.filter(i => i.status === 'cleared').length;
+                const rejected = items.filter(i => i.status === 'rejected').length;
+                const pending = total - cleared - rejected;
+
+                document.getElementById('statsGrid').innerHTML = `
+                    <div class="stat-card"><div class="stat-info"><h3>Total Officers</h3><p>${total}</p></div><span class="stat-icon">👥</span></div>
+                    <div class="stat-card success"><div class="stat-info"><h3>Cleared</h3><p>${cleared}</p></div><span class="stat-icon">✅</span></div>
+                    <div class="stat-card" style="background:#f59e0b;"><div class="stat-info"><h3>Pending</h3><p>${pending}</p></div><span class="stat-icon">⏳</span></div>
+                    <div class="stat-card" style="background:#ef4444;"><div class="stat-info"><h3>Rejected</h3><p>${rejected}</p></div><span class="stat-icon">❌</span></div>
+                `;
+
+                // Items list
+                let html = '';
+                items.forEach(item => {
+                    const label = CONFIG.OFFICER_LABELS[item.officer_role] || item.officer_role;
+                    const statusClass = CONFIG.STATUS_CLASSES[item.status] || 'badge-pending';
+                    const statusLabel = CONFIG.STATUS_LABELS[item.status] || item.status;
+                    
+                    html += `
+                        <div class="clearance-item">
+                            <div class="clearance-item-info">
+                                <h4>${label}</h4>
+                                <p>${item.remarks || 'No remarks'}</p>
+                                ${item.processed_at ? `<p style="font-size:0.75rem; color:#9ca3af;">Processed: ${new Date(item.processed_at).toLocaleString()}</p>` : ''}
+                            </div>
+                            <div class="clearance-item-status">
+                                <span class="badge ${statusClass}">${statusLabel}</span>
+                            </div>
+                        </div>`;
+                });
+
+                document.getElementById('clearanceItems').innerHTML = html;
+
+                // Show download button if final approved
+                if (latestSession.overall_status === 'final_approved') {
+                    document.getElementById('clearanceItems').innerHTML += `
+                        <div style="text-align:center; margin-top:24px;">
+                            <button class="btn btn-success btn-lg" onclick="downloadCertificate(${latestSession.id})">
+                                📄 Download Clearance Certificate
+                            </button>
+                        </div>`;
+                }
+            } catch (error) {
+                document.getElementById('clearanceItems').innerHTML = `
+                    <div class="alert alert-error">Error loading clearance status: ${error.message}</div>`;
+            }
+        }
+
+        async function initiateClearance() {
+            const academicYear = prompt('Enter academic year (e.g., 2025/2026):', '2025/2026');
+            if (!academicYear) return;
+
+            const user = Auth.getCurrentUser();
+            const userId = user.id; // Get the logged-in user's ID
+
+            try {
+                const response = await API.initiateClearance(academicYear, userId);
+                alert(response.message || 'Clearance initiated successfully!');
+                loadClearanceStatus();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const response = await API.getMyClearanceStatus();
+                const sessions = response.data;
+                
+                if (sessions.length === 0) {
+                    document.getElementById('historyContent').innerHTML = '<p style="text-align:center; color:#6b7280;">No clearance history found.</p>';
+                    return;
+                }
+
+                let html = '';
+                sessions.forEach((session, index) => {
+                    const statusClass = CONFIG.STATUS_CLASSES[session.overall_status] || 'badge-pending';
+                    const statusLabel = CONFIG.STATUS_LABELS[session.overall_status] || session.overall_status;
+                    
+                    html += `
+                        <div class="card" style="margin-bottom:16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <h4>Session #${session.id}</h4>
+                                    <p style="color:#6b7280; font-size:0.85rem;">Academic Year: ${session.academic_year}</p>
+                                    <p style="color:#6b7280; font-size:0.85rem;">Initiated: ${new Date(session.initiated_at).toLocaleDateString()}</p>
+                                </div>
+                                <span class="badge ${statusClass}">${statusLabel}</span>
+                            </div>
+                        </div>`;
+                });
+
+                document.getElementById('historyContent').innerHTML = html;
+            } catch (error) {
+                document.getElementById('historyContent').innerHTML = `
+                    <div class="alert alert-error">Error loading history: ${error.message}</div>`;
+            }
+        }
+
+        function downloadCertificate(sessionId) {
+            alert('Certificate download will be available in the full version.\nSession ID: ' + sessionId);
+        }
+    </script>
+</body>
+</html>

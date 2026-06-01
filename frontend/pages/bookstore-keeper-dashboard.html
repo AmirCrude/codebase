@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookstore Keeper Dashboard - HU Clearance</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <span class="logo-icon">🎓</span>
+                <span>HU Clearance</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../index.html">Home</a>
+                <a href="#" class="active">Dashboard</a>
+                <div class="nav-user-info" id="userInfo" style="display:none;"></div>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <button class="mobile-toggle" onclick="document.getElementById('navLinks').classList.toggle('active')">☰</button>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <aside class="sidebar"><div class="sidebar-header"><h3 id="sidebarName">Officer</h3><p id="sidebarRole">Bookstore Keeper</p></div>
+            <ul class="sidebar-nav"><li><a href="#" class="active" onclick="showSection('pending')"><span class="icon">⏳</span> Pending</a></li><li><a href="#" onclick="showSection('all')"><span class="icon">📋</span> All</a></li></ul></aside>
+
+        <main class="main-content">
+            <div id="section-pending"><div class="page-header"><h2>Pending Bookstore Clearances</h2><p>Students needing textbook/equipment return verification</p></div>
+                <div class="filter-bar"><input type="text" id="searchPending" placeholder="Search..." oninput="filterPending()"></div>
+                <div id="pendingList"><div class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
+            <div id="section-all" style="display:none;"><div class="page-header"><h2>All Bookstore Clearances</h2></div><div id="allList"><div class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="rejectModal"><div class="modal"><h3>Reject Clearance</h3><textarea id="rejectRemarks" class="form-control" placeholder="List unreturned items..."></textarea><input type="hidden" id="rejectItemId"><div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-danger" onclick="confirmReject()">Reject</button></div></div></div>
+
+    <script src="../js/config.js"></script><script src="../js/api.js"></script><script src="../js/auth.js"></script>
+    <script>
+        if (!Auth.checkAuth() || !Auth.checkRole(['bookstore_keeper'])) {}
+        const user = Auth.getCurrentUser(); const role = 'bookstore_keeper';
+        document.getElementById('sidebarName').textContent = user.full_name;
+        document.getElementById('sidebarRole').textContent = 'Bookstore Keeper';
+        let pendingData = [], allData = []; loadPending();
+        function showSection(s) { document.getElementById('section-pending').style.display = s==='pending'?'block':'none'; document.getElementById('section-all').style.display = s==='all'?'block':'none'; if(s==='all') loadAll(); }
+        async function loadPending() { try { const r = await API.getPendingByRole(role); pendingData = r.data; renderPending(pendingData); } catch(e) { document.getElementById('pendingList').innerHTML = `<div class="alert alert-error">${e.message}</div>`; } }
+        function renderPending(data) { if(!data.length) { document.getElementById('pendingList').innerHTML = '<p style="text-align:center;padding:40px;">No pending. 🎉</p>'; return; } let h = ''; data.forEach(i => { h += `<div class="clearance-item"><div class="clearance-item-info"><h4>${i.student_name}</h4><p>ID: ${i.student_id} | ${i.faculty}</p></div><div class="clearance-item-actions"><button class="btn btn-success btn-sm" onclick="approveClearance(${i.item_id})">✅ Approve</button><button class="btn btn-danger btn-sm" onclick="openRejectModal(${i.item_id})">❌ Reject</button></div></div>`; }); document.getElementById('pendingList').innerHTML = h; }
+        function filterPending() { const s = document.getElementById('searchPending').value.toLowerCase(); renderPending(pendingData.filter(i => i.student_name.toLowerCase().includes(s) || i.student_id.toLowerCase().includes(s))); }
+        async function loadAll() { try { const r = await API.getAllByRole(role); allData = r.data; renderAll(allData); } catch(e) { document.getElementById('allList').innerHTML = `<div class="alert alert-error">${e.message}</div>`; } }
+        function renderAll(data) { if(!data.length) { document.getElementById('allList').innerHTML = '<p style="text-align:center;padding:40px;">No records.</p>'; return; } let h = '<div class="table-container"><table><thead><tr><th>Student</th><th>ID</th><th>Status</th><th>Date</th></tr></thead><tbody>'; data.forEach(i => { const sc = CONFIG.STATUS_CLASSES[i.status]||'badge-pending'; h += `<tr><td>${i.student_name}</td><td>${i.student_id}</td><td><span class="badge ${sc}">${CONFIG.STATUS_LABELS[i.status]||i.status}</span></td><td>${i.updated_at?new Date(i.updated_at).toLocaleDateString():'-'}</td></tr>`; }); h += '</tbody></table></div>'; document.getElementById('allList').innerHTML = h; }
+        async function approveClearance(id) { if(!confirm('Approve?')) return; try { await API.approveClearance(id); loadPending(); } catch(e) { alert(e.message); } }
+        function openRejectModal(id) { document.getElementById('rejectItemId').value = id; document.getElementById('rejectRemarks').value = ''; document.getElementById('rejectModal').classList.add('active'); }
+        function closeModal() { document.getElementById('rejectModal').classList.remove('active'); }
+        async function confirmReject() { const id = document.getElementById('rejectItemId').value; const r = document.getElementById('rejectRemarks').value.trim(); if(!r) { alert('Reason required.'); return; } try { await API.rejectClearance(id, r); closeModal(); loadPending(); } catch(e) { alert(e.message); } }
+    </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - HU Clearance</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <span class="logo-icon">🎓</span>
+                <span>HU Clearance</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../index.html">Home</a>
+                <a href="#" class="active">Dashboard</a>
+                <div class="nav-user-info" id="userInfo" style="display:none;"></div>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <button class="mobile-toggle" onclick="document.getElementById('navLinks').classList.toggle('active')">☰</button>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <aside class="sidebar"><div class="sidebar-header"><h3 id="sidebarName">Admin</h3><p id="sidebarRole">Administrator</p></div>
+            <ul class="sidebar-nav">
+                <li><a href="#" class="active" onclick="showSection('overview')"><span class="icon">📊</span> Overview</a></li>
+                <li><a href="#" onclick="showSection('users')"><span class="icon">👥</span> Users</a></li>
+                <li><a href="#" onclick="showSection('reports')"><span class="icon">📋</span> Reports</a></li>
+            </ul></aside>
+
+        <main class="main-content">
+            <div id="section-overview">
+                <div class="page-header"><h2>System Overview</h2></div>
+                <div class="stats-grid" id="overviewStats"></div>
+                <div id="overviewLoading"><div class="loading"><div class="spinner"></div><p>Loading...</p></div></div>
+            </div>
+            <div id="section-users" style="display:none;">
+                <div class="page-header"><h2>User Management</h2></div>
+                <div id="usersList"><div class="loading"><div class="spinner"></div><p>Loading...</p></div></div>
+            </div>
+            <div id="section-reports" style="display:none;">
+                <div class="page-header"><h2>Clearance Reports</h2></div>
+                <div id="reportsContent"><div class="loading"><div class="spinner"></div><p>Loading...</p></div></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/config.js"></script><script src="../js/api.js"></script><script src="../js/auth.js"></script>
+    <script>
+        if (!Auth.checkAuth() || !Auth.checkRole(['admin'])) {}
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebarName').textContent = user.full_name;
+        loadOverview();
+
+        function showSection(s) {
+            document.getElementById('section-overview').style.display = s==='overview'?'block':'none';
+            document.getElementById('section-users').style.display = s==='users'?'block':'none';
+            document.getElementById('section-reports').style.display = s==='reports'?'block':'none';
+            if(s==='users') loadUsers();
+            if(s==='reports') loadReports();
+            if(s==='overview') loadOverview();
+        }
+
+        async function loadOverview() {
+            try {
+                const r = await API.getAdminDashboard();
+                const s = r.data;
+                document.getElementById('overviewStats').innerHTML = `
+                    <div class="stat-card"><div class="stat-info"><h3>Total Users</h3><p>${s.total_users}</p></div><span class="stat-icon">👥</span></div>
+                    <div class="stat-card success"><div class="stat-info"><h3>Total Students</h3><p>${s.total_students}</p></div><span class="stat-icon">🎓</span></div>
+                    <div class="stat-card" style="background:#f59e0b;"><div class="stat-info"><h3>Pending Sessions</h3><p>${s.pending_sessions}</p></div><span class="stat-icon">⏳</span></div>
+                    <div class="stat-card success"><div class="stat-info"><h3>Completed</h3><p>${s.completed_sessions}</p></div><span class="stat-icon">✅</span></div>`;
+                document.getElementById('overviewLoading').style.display = 'none';
+            } catch(e) { document.getElementById('overviewLoading').innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+        }
+
+        async function loadUsers() {
+            try {
+                const r = await API.getAllUsers();
+                const users = r.data;
+                let h = '<div class="table-container"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th>Action</th></tr></thead><tbody>';
+                users.forEach(u => {
+                    const roleLabel = CONFIG.OFFICER_LABELS[u.role] || u.role;
+                    h += `<tr><td>${u.full_name}</td><td>${u.email}</td><td>${roleLabel}</td><td><span class="badge ${u.status==='active'?'badge-cleared':'badge-rejected'}">${u.status}</span></td><td>${new Date(u.created_at).toLocaleDateString()}</td><td>${u.status==='active'?`<button class="btn btn-danger btn-sm" onclick="toggleUser(${u.id},'inactive')">Deactivate</button>`:`<button class="btn btn-success btn-sm" onclick="toggleUser(${u.id},'active')">Activate</button>`}</td></tr>`;
+                });
+                h += '</tbody></table></div>';
+                document.getElementById('usersList').innerHTML = h;
+            } catch(e) { document.getElementById('usersList').innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+        }
+
+        async function toggleUser(userId, status) {
+            if(!confirm(`Change user status to ${status}?`)) return;
+            try { await API.updateUserStatus(userId, status); alert('User status updated.'); loadUsers(); } catch(e) { alert(e.message); }
+        }
+
+        async function loadReports() {
+            try {
+                const r = await API.getAggregatedData();
+                const data = r.data;
+                let h = '<h3>Faculty Summary</h3>';
+                if(data.faculty_summary && data.faculty_summary.length) {
+                    h += '<div class="table-container"><table><thead><tr><th>Faculty</th><th>Dept</th><th>Year</th><th>Total</th><th>Done</th><th>Pending</th></tr></thead><tbody>';
+                    data.faculty_summary.forEach(row => { h += `<tr><td>${row.faculty}</td><td>${row.department}</td><td>${row.academic_year}</td><td>${row.total_sessions}</td><td style="color:#10b981;">${row.completed}</td><td style="color:#f59e0b;">${row.pending}</td></tr>`; });
+                    h += '</tbody></table></div>';
+                }
+                document.getElementById('reportsContent').innerHTML = h;
+            } catch(e) { document.getElementById('reportsContent').innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+        }
+    </script>
+</body>
+</html>

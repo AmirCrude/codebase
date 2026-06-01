@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clearance Management System - Hawassa University</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-icon">🎓</span>
+                <span>HU Clearance</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="index.html" class="active">Home</a>
+                <a href="login.html" id="loginLink">Login</a>
+                <a href="register.html" id="registerLink">Register</a>
+                <a href="#" id="dashboardLink" style="display:none;">Dashboard</a>
+                <div class="nav-user-info" id="userInfo" style="display:none;"></div>
+                <a href="#" id="logoutLink" style="display:none;" onclick="logout()">Logout</a>
+            </div>
+            <button class="mobile-toggle" onclick="document.getElementById('navLinks').classList.toggle('active')">☰</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="app">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Clearance Management System</h1>
+                <p>Hawassa University — Streamline your end-of-year clearance process. Submit requests, track status across 9 verifying officers, and get cleared — all in one place.</p>
+                <div class="hero-buttons">
+                    <a href="register.html" class="btn btn-accent btn-lg">Get Started</a>
+                    <a href="login.html" class="btn btn-outline" style="color:white;border-color:white;">Login</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features">
+            <h2>How It Works</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3>1. Submit Request</h3>
+                    <p>Initiate your clearance request online in seconds — no more standing in long queues.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <h3>2. 9 Verifying Officers</h3>
+                    <p>Department Head, Faculty Dean, Dormitory Chief, Library Chief, Bookstore Keeper, Student Service, Sports Master, FAR, and Data Analyst — all connected digitally.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>3. Real-Time Tracking</h3>
+                    <p>Monitor your clearance progress across all units in real time. Get notified when each officer approves.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✅</div>
+                    <h3>4. Get Cleared</h3>
+                    <p>Once all 8 officers approve and the Faculty Assistant Registrar gives final approval, download your clearance certificate.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Verifying Officers Section -->
+        <section class="features" style="background:#f9fafb;">
+            <h2>Verifying Officers</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👨‍🏫</div>
+                    <h3>Department Head</h3>
+                    <p>Verifies academic obligations within the department</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏛️</div>
+                    <h3>Faculty Dean</h3>
+                    <p>Verifies faculty-level requirements</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏠</div>
+                    <h3>Dormitory Chief</h3>
+                    <p>Confirms room inspection & property return</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3>Library Chief</h3>
+                    <p>Checks book returns & library fines</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📖</div>
+                    <h3>Bookstore Keeper</h3>
+                    <p>Verifies textbook & equipment returns</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤝</div>
+                    <h3>Student Service</h3>
+                    <p>Verifies welfare & activity requirements</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚽</div>
+                    <h3>Sports Master</h3>
+                    <p>Verifies sports equipment returns</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3>FAR</h3>
+                    <p>Issues final clearance approval</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Data Analyst</h3>
+                    <p>Aggregates & analyzes clearance data</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Stats Section -->
+        <section class="features">
+            <h2>System Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Role-Based Access</h3>
+                    <p>12 distinct user roles with secure, personalized dashboards</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔔</div>
+                    <h3>Notifications</h3>
+                    <p>Email and in-app notifications for every status update</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📄</div>
+                    <h3>Digital Certificate</h3>
+                    <p>Download your clearance certificate once fully approved</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Responsive Design</h3>
+                    <p>Access from desktop, tablet, or mobile browser</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Hawassa University Clearance Management System. All rights reserved.</p>
+        <p style="margin-top:8px;font-size:0.8rem;">Department Head | Faculty Dean | Dormitory Chief | Library Chief | Bookstore Keeper | Student Service | Sports Master | FAR | Data Analyst | Gate Security</p>
+    </footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Update navbar based on login status
+        document.addEventListener('DOMContentLoaded', () => {
+            Auth.updateNavbar();
+            
+            const user = Auth.getCurrentUser();
+            if (user) {
+                const dashboardLink = document.getElementById('dashboardLink');
+                if (dashboardLink) {
+                    dashboardLink.style.display = 'inline';
+                    dashboardLink.href = '#';
+                    dashboardLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        Auth.redirectToDashboard(user.role);
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>

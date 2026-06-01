@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dean Dashboard - HU Clearance</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <span class="logo-icon">🎓</span>
+                <span>HU Clearance</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../index.html">Home</a>
+                <a href="#" class="active">Dashboard</a>
+                <div class="nav-user-info" id="userInfo" style="display:none;"></div>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <button class="mobile-toggle" onclick="document.getElementById('navLinks').classList.toggle('active')">☰</button>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3 id="sidebarName">Officer Name</h3>
+                <p id="sidebarRole">Faculty Dean</p>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="#" class="active" onclick="showSection('pending')"><span class="icon">⏳</span> Pending Clearances</a></li>
+                <li><a href="#" onclick="showSection('all')"><span class="icon">📋</span> All Clearances</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div id="section-pending">
+                <div class="page-header">
+                    <h2>Pending Faculty Clearances</h2>
+                    <p>Students from your faculty waiting for approval</p>
+                </div>
+                <div class="filter-bar">
+                    <input type="text" id="searchPending" placeholder="Search by name or student ID..." oninput="filterPending()">
+                </div>
+                <div id="pendingList">
+                    <div class="loading"><div class="spinner"></div><p>Loading pending clearances...</p></div>
+                </div>
+            </div>
+
+            <div id="section-all" style="display:none;">
+                <div class="page-header">
+                    <h2>All Faculty Clearances</h2>
+                    <p>Complete clearance history</p>
+                </div>
+                <div class="filter-bar">
+                    <input type="text" id="searchAll" placeholder="Search..." oninput="filterAll()">
+                </div>
+                <div id="allList">
+                    <div class="loading"><div class="spinner"></div><p>Loading all clearances...</p></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="rejectModal">
+        <div class="modal">
+            <h3>Reject Clearance</h3>
+            <p>Please provide a reason for rejection:</p>
+            <textarea id="rejectRemarks" class="form-control" placeholder="Enter rejection reason..." rows="3"></textarea>
+            <input type="hidden" id="rejectItemId">
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmReject()">Reject</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        if (!Auth.checkAuth() || !Auth.checkRole(['faculty_dean'])) {}
+
+        const user = Auth.getCurrentUser();
+        const role = 'faculty_dean';
+        const officerId = 4; // Faculty Dean user ID from database
+        
+        document.getElementById('sidebarName').textContent = user.full_name;
+        document.getElementById('sidebarRole').textContent = 'Faculty Dean';
+
+        let pendingData = [];
+        let allData = [];
+
+        loadPending();
+
+        function showSection(section) {
+            document.getElementById('section-pending').style.display = section === 'pending' ? 'block' : 'none';
+            document.getElementById('section-all').style.display = section === 'all' ? 'block' : 'none';
+            if (section === 'all') loadAll();
+        }
+
+        async function loadPending() {
+            try {
+                const response = await API.getPendingByRole(role);
+                pendingData = response.data;
+                renderPending(pendingData);
+            } catch (error) {
+                document.getElementById('pendingList').innerHTML = `<div class="alert alert-error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function renderPending(data) {
+            if (data.length === 0) {
+                document.getElementById('pendingList').innerHTML = '<p style="text-align:center;color:#6b7280;padding:40px;">No pending clearances. 🎉</p>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(item => {
+                html += `
+                <div class="clearance-item">
+                    <div class="clearance-item-info">
+                        <h4>${item.student_name}</h4>
+                        <p>ID: ${item.student_id} | Faculty: ${item.faculty} | Dept: ${item.department}</p>
+                        <p style="font-size:0.8rem;color:#9ca3af;">Session #${item.session_id}</p>
+                    </div>
+                    <div class="clearance-item-actions">
+                        <button class="btn btn-success btn-sm" onclick="approveClearance(${item.item_id})">✅ Approve</button>
+                        <button class="btn btn-danger btn-sm" onclick="openRejectModal(${item.item_id})">❌ Reject</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('pendingList').innerHTML = html;
+        }
+
+        function filterPending() {
+            const search = document.getElementById('searchPending').value.toLowerCase();
+            const filtered = pendingData.filter(item => 
+                item.student_name.toLowerCase().includes(search) || 
+                item.student_id.toLowerCase().includes(search)
+            );
+            renderPending(filtered);
+        }
+
+        async function loadAll() {
+            try {
+                const response = await API.getAllByRole(role);
+                allData = response.data;
+                renderAll(allData);
+            } catch (error) {
+                document.getElementById('allList').innerHTML = `<div class="alert alert-error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function renderAll(data) {
+            if (data.length === 0) {
+                document.getElementById('allList').innerHTML = '<p style="text-align:center;color:#6b7280;padding:40px;">No records found.</p>';
+                return;
+            }
+            let html = '<div class="table-container"><table><thead><tr><th>Student</th><th>ID</th><th>Faculty</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+            data.forEach(item => {
+                const statusClass = CONFIG.STATUS_CLASSES[item.status] || 'badge-pending';
+                html += `<tr><td>${item.student_name}</td><td>${item.student_id}</td><td>${item.faculty}</td><td><span class="badge ${statusClass}">${CONFIG.STATUS_LABELS[item.status] || item.status}</span></td><td>${item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-'}</td></tr>`;
+            });
+            html += '</tbody></table></div>';
+            document.getElementById('allList').innerHTML = html;
+        }
+
+        function filterAll() {
+            const search = document.getElementById('searchAll').value.toLowerCase();
+            const filtered = allData.filter(item => item.student_name.toLowerCase().includes(search) || item.student_id.toLowerCase().includes(search));
+            renderAll(filtered);
+        }
+
+        async function approveClearance(itemId) {
+            if (!confirm('Approve this clearance?')) return;
+            try {
+                await API.approveClearance(itemId, '', officerId);
+                alert('Approved!');
+                loadPending();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function openRejectModal(itemId) {
+            document.getElementById('rejectItemId').value = itemId;
+            document.getElementById('rejectRemarks').value = '';
+            document.getElementById('rejectModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('rejectModal').classList.remove('active');
+        }
+
+        async function confirmReject() {
+            const itemId = document.getElementById('rejectItemId').value;
+            const remarks = document.getElementById('rejectRemarks').value.trim();
+            if (!remarks) {
+                alert('Please provide a reason.');
+                return;
+            }
+            try {
+                await API.rejectClearance(itemId, remarks, officerId);
+                closeModal();
+                alert('Rejected.');
+                loadPending();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

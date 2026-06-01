@@ -1,0 +1,115 @@
+/* ============================================
+   LOGIN & REGISTER FORM STYLES
+   ============================================ */
+
+   .auth-container {
+    min-height: calc(100vh - 64px - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #f0f9ff 100%);
+}
+
+.auth-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 40px;
+    width: 100%;
+    max-width: 480px;
+}
+
+.auth-card h2 {
+    text-align: center;
+    color: var(--primary);
+    margin-bottom: 8px;
+    font-size: 1.5rem;
+}
+
+.auth-card .subtitle {
+    text-align: center;
+    color: var(--gray-500);
+    margin-bottom: 32px;
+    font-size: 0.9rem;
+}
+
+.auth-card .form-footer {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--gray-200);
+    font-size: 0.9rem;
+    color: var(--gray-500);
+}
+
+.auth-card .form-footer a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-card .form-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Role Selection Cards */
+.role-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.role-card {
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.role-card:hover {
+    border-color: var(--primary-light);
+}
+
+.role-card.selected {
+    border-color: var(--primary);
+    background: #f0fdf4;
+}
+
+.role-card .role-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.role-card .role-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--gray-700);
+}
+
+/* Additional fields that show/hide based on role */
+.conditional-fields {
+    display: none;
+}
+
+.conditional-fields.show {
+    display: block;
+}
+
+/* Error message */
+.form-error {
+    background: var(--danger-light);
+    color: #991b1b;
+    padding: 12px;
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    display: none;
+}
+
+.form-error.show {
+    display: block;
+}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Assistant Registrar - HU Clearance</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <span class="logo-icon">🎓</span>
+                <span>HU Clearance</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../index.html">Home</a>
+                <a href="#" class="active">Dashboard</a>
+                <div class="nav-user-info" id="userInfo" style="display:none;"></div>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <button class="mobile-toggle" onclick="document.getElementById('navLinks').classList.toggle('active')">☰</button>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <aside class="sidebar"><div class="sidebar-header"><h3 id="sidebarName">Officer</h3><p id="sidebarRole">Faculty Assistant Registrar</p></div>
+            <ul class="sidebar-nav"><li><a href="#" class="active" onclick="showSection('review')"><span class="icon">✅</span> Ready for Final Approval</a></li><li><a href="#" onclick="showSection('all')"><span class="icon">📋</span> All Completed</a></li></ul></aside>
+
+        <main class="main-content">
+            <div id="section-review"><div class="page-header"><h2>Students Ready for Final Approval</h2><p>All 7 officers have cleared these students. Issue final approval.</p></div>
+                <div id="reviewList"><div class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
+            <div id="section-all" style="display:none;"><div class="page-header"><h2>Search Student Clearance</h2></div>
+                <div class="filter-bar"><input type="text" id="searchStudent" placeholder="Enter student ID or name..."><button class="btn btn-primary" onclick="searchStudent()">Search</button></div>
+                <div id="searchResult"></div></div>
+        </main>
+    </div>
+
+    <script src="../js/config.js"></script><script src="../js/api.js"></script><script src="../js/auth.js"></script>
+    <script>
+        if (!Auth.checkAuth() || !Auth.checkRole(['faculty_assistant_registrar'])) {}
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebarName').textContent = user.full_name;
+        document.getElementById('sidebarRole').textContent = 'Faculty Assistant Registrar';
+        loadReview();
+
+        function showSection(s) { document.getElementById('section-review').style.display = s==='review'?'block':'none'; document.getElementById('section-all').style.display = s==='all'?'block':'none'; }
+        async function loadReview() {
+            try {
+                const r = await API.getFarReviewData();
+                const data = r.data;
+                if(!data.length) { document.getElementById('reviewList').innerHTML = '<p style="text-align:center;padding:40px;">No students ready for final approval.</p>'; return; }
+                let h = '';
+                data.forEach(s => {
+                    h += `<div class="clearance-item"><div class="clearance-item-info"><h4>${s.student_name}</h4><p>ID: ${s.student_id} | ${s.faculty} | ${s.department}</p><p style="font-size:0.85rem;color:#10b981;">✅ ${s.cleared_count}/${s.total_count} officers cleared</p></div><div class="clearance-item-actions"><button class="btn btn-accent btn-sm" onclick="finalApprove(${s.id})">🏆 Final Approve</button></div></div>`;
+                });
+                document.getElementById('reviewList').innerHTML = h;
+            } catch(e) { document.getElementById('reviewList').innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+        }
+
+        async function finalApprove(sessionId) {
+            if(!confirm('Are you sure you want to issue FINAL APPROVAL? This confirms all clearances are complete.')) return;
+            try { 
+                await API.finalApprove(sessionId, 10); // FAR officer_id is 10
+                alert('Final approval granted! Student is now fully cleared.'); 
+                loadReview(); 
+            } catch(e) { 
+                alert('Error: ' + e.message); 
+            }
+        }
+
+        async function searchStudent() {
+            const search = document.getElementById('searchStudent').value.trim();
+            if(!search) { alert('Enter student ID or name.'); return; }
+            try {
+                const r = await API.searchStudent(search);
+                const data = r.data;
+                if(!data.length) { document.getElementById('searchResult').innerHTML = '<p style="text-align:center;padding:20px;">No results found.</p>'; return; }
+                let h = '';
+                data.forEach(s => {
+                    const sc = CONFIG.STATUS_CLASSES[s.overall_status]||'badge-pending';
+                    h += `<div class="search-result"><h3>${s.student_name} (${s.student_id})</h3><p>${s.faculty} | ${s.department} | ${s.academic_year}</p><p class="status-large ${s.overall_status==='final_approved'?'cleared':'not-cleared'}">${CONFIG.STATUS_LABELS[s.overall_status]||s.overall_status}</p>`;
+                    if(s.items) { s.items.forEach(i => { h += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e7eb;"><span>${CONFIG.OFFICER_LABELS[i.officer_role]||i.officer_role}</span><span class="badge ${CONFIG.STATUS_CLASSES[i.status]||'badge-pending'}">${CONFIG.STATUS_LABELS[i.status]||i.status}</span></div>`; }); }
+                    h += `</div>`;
+                });
+                document.getElementById('searchResult').innerHTML = h;
+            } catch(e) { document.getElementById('searchResult').innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+        }
+    </script>
+</body>
+</html>

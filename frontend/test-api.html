@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Panel</title>
+    <style>
+        body { font-family: monospace; background: #1a1a2e; color: #e0e0e0; padding: 20px; }
+        h1 { color: #f4c430; }
+        .test-group { margin: 20px 0; padding: 15px; background: #16213e; border-radius: 8px; }
+        .test-group h3 { color: #0f9b8e; margin-top: 0; }
+        button { padding: 8px 16px; margin: 4px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; }
+        .btn-test { background: #0f9b8e; color: white; }
+        .btn-test:hover { background: #0d8b7e; }
+        .result { margin-top: 10px; padding: 10px; background: #0d1117; border-radius: 4px; white-space: pre-wrap; font-size: 12px; max-height: 300px; overflow-y: auto; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Clearance System - API Test Panel</h1>
+    <p>Click each button to test the API endpoints. Results appear below each button.</p>
+
+    <!-- Test 1: Database -->
+    <div class="test-group">
+        <h3>Test 1: Database Connection</h3>
+        <button class="btn-test" onclick="testEndpoint('/test-db.php', 'dbResult')">Test Database</button>
+        <div id="dbResult" class="result">Click to test...</div>
+    </div>
+
+    <!-- Test 2: Auth -->
+    <div class="test-group">
+        <h3>Test 2: Authentication</h3>
+        <button class="btn-test" onclick="testLogin('admin@hu.edu.et', '12345678', 'loginResult1')">Login as Admin</button>
+        <div id="loginResult1" class="result">Click to test...</div>
+        
+        <button class="btn-test" style="margin-top:10px;" onclick="testLogin('student@hu.edu.et', '12345678', 'loginResult2')">Login as Student</button>
+        <div id="loginResult2" class="result">Click to test...</div>
+        
+        <button class="btn-test" style="margin-top:10px;" onclick="testLogin('depthead@hu.edu.et', '12345678', 'loginResult3')">Login as Dept Head</button>
+        <div id="loginResult3" class="result">Click to test...</div>
+    </div>
+
+    <!-- Test 3: Clearance -->
+    <div class="test-group">
+        <h3>Test 3: Student Clearance</h3>
+        <button class="btn-test" onclick="testGet('/api/clearance?action=my-status&user_id=2', 'statusResult')">Get Student Status (user_id=2)</button>
+        <div id="statusResult" class="result">Click to test...</div>
+        
+        <button class="btn-test" style="margin-top:10px;" onclick="testPost('/api/clearance?action=initiate', {academic_year:'2025/2026', user_id:2}, 'initResult')">Initiate Clearance (student)</button>
+        <div id="initResult" class="result">Click to test...</div>
+    </div>
+
+    <!-- Test 4: Officer Actions -->
+    <div class="test-group">
+        <h3>Test 4: Officer Approval/Rejection</h3>
+        <button class="btn-test" onclick="testGet('/api/clearance?action=pending&role=department_head', 'pendingResult')">Get Pending (Dept Head)</button>
+        <div id="pendingResult" class="result">Click to test...</div>
+        
+        <p style="margin-top:10px;">Enter Item ID: <input id="itemIdInput" value="1" size="5" style="padding:4px;"></p>
+        <button class="btn-test" onclick="testPost('/api/clearance?action=approve', {item_id:getItemId(), remarks:'Test approval', officer_id:3}, 'approveResult')">Approve Item</button>
+        <button class="btn-test" onclick="testPost('/api/clearance?action=reject', {item_id:getItemId(), remarks:'Test rejection - missing books', officer_id:3}, 'rejectResult')">Reject Item</button>
+        <div id="approveResult" class="result">Click to test...</div>
+        <div id="rejectResult" class="result">Click to test...</div>
+    </div>
+
+    <!-- Test 5: FAR -->
+    <div class="test-group">
+        <h3>Test 5: FAR Final Approval</h3>
+        <button class="btn-test" onclick="testGet('/api/clearance?action=far-review', 'farResult')">Get Ready for Approval</button>
+        <div id="farResult" class="result">Click to test...</div>
+        
+        <p style="margin-top:10px;">Session ID: <input id="sessionIdInput" value="1" size="5" style="padding:4px;"></p>
+        <button class="btn-test" onclick="testPost('/api/clearance?action=final-approve', {session_id:getSessionId(), officer_id:10}, 'finalResult')">Final Approve</button>
+        <div id="finalResult" class="result">Click to test...</div>
+    </div>
+
+    <!-- Test 6: Gate Security -->
+    <div class="test-group">
+        <h3>Test 6: Gate Security Search</h3>
+        <button class="btn-test" onclick="testGet('/api/clearance?action=search-student&search=HU', 'searchResult')">Search "HU"</button>
+        <div id="searchResult" class="result">Click to test...</div>
+    </div>
+
+    <!-- Test 7: Data Analyst -->
+    <div class="test-group">
+        <h3>Test 7: Data Analyst</h3>
+        <button class="btn-test" onclick="testGet('/api/clearance?action=aggregated-data', 'dataResult')">Get Aggregated Data</button>
+        <div id="dataResult" class="result">Click to test...</div>
+    </div>
+
+    <!-- Test 8: Admin -->
+    <div class="test-group">
+        <h3>Test 8: Admin</h3>
+        <button class="btn-test" onclick="testGet('/api/admin?action=dashboard', 'adminResult')">Admin Dashboard</button>
+        <div id="adminResult" class="result">Click to test...</div>
+        
+        <button class="btn-test" style="margin-top:10px;" onclick="testGet('/api/admin?action=users', 'usersResult')">All Users</button>
+        <div id="usersResult" class="result">Click to test...</div>
+    </div>
+
+    <script>
+        const BASE = 'http://localhost:8000';
+        
+        function getItemId() { return document.getElementById('itemIdInput').value; }
+        function getSessionId() { return document.getElementById('sessionIdInput').value; }
+
+        async function testEndpoint(path, resultId) {
+            const div = document.getElementById(resultId);
+            div.innerHTML = '<span class="info">Testing...</span>';
+            try {
+                const res = await fetch(BASE + path);
+                const data = await res.json();
+                div.innerHTML = `<span class="${data.success ? 'success' : 'error'}">Status: ${res.status}</span>\n${JSON.stringify(data, null, 2)}`;
+            } catch(e) {
+                div.innerHTML = `<span class="error">FAILED: ${e.message}</span>`;
+            }
+        }
+
+        async function testLogin(email, password, resultId) {
+            const div = document.getElementById(resultId);
+            div.innerHTML = '<span class="info">Logging in...</span>';
+            try {
+                const res = await fetch(BASE + '/api/auth?action=login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password})
+                });
+                const data = await res.json();
+                div.innerHTML = `<span class="${data.success ? 'success' : 'error'}">Status: ${res.status}</span>\n${JSON.stringify(data, null, 2)}`;
+            } catch(e) {
+                div.innerHTML = `<span class="error">FAILED: ${e.message}</span>`;
+            }
+        }
+
+        async function testGet(path, resultId) {
+            const div = document.getElementById(resultId);
+            div.innerHTML = '<span class="info">Loading...</span>';
+            try {
+                const res = await fetch(BASE + path);
+                const data = await res.json();
+                div.innerHTML = `<span class="${data.success ? 'success' : 'error'}">Status: ${res.status}</span>\n${JSON.stringify(data, null, 2)}`;
+            } catch(e) {
+                div.innerHTML = `<span class="error">FAILED: ${e.message}</span>`;
+            }
+        }
+
+        async function testPost(path, body, resultId) {
+            const div = document.getElementById(resultId);
+            div.innerHTML = '<span class="info">Sending...</span>';
+            try {
+                const res = await fetch(BASE + path, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                div.innerHTML = `<span class="${data.success ? 'success' : 'error'}">Status: ${res.status}</span>\n${JSON.stringify(data, null, 2)}`;
+            } catch(e) {
+                div.innerHTML = `<span class="error">FAILED: ${e.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Analyst Dashboard - HU Clearance</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <span class="logo-icon">🎓</span>
+                <span>HU Clearance</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../index.html">Home</a>
+                <a href="#" class="active">Dashboard</a>
+                <div class="nav-user-info" id="userInfo" style="display:none;"></div>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <button class="mobile-toggle" onclick="document.getElementById('navLinks').classList.toggle('active')">☰</button>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <aside class="sidebar"><div class="sidebar-header"><h3 id="sidebarName">Officer</h3><p id="sidebarRole">Data Analyst</p></div>
+            <ul class="sidebar-nav"><li><a href="#" class="active" onclick="showSection('faculty')"><span class="icon">📊</span> Faculty Summary</a></li><li><a href="#" onclick="showSection('units')"><span class="icon">📈</span> Unit Performance</a></li></ul></aside>
+
+        <main class="main-content">
+            <div id="section-faculty"><div class="page-header"><h2>Faculty Clearance Summary</h2><p>Aggregated clearance data by faculty and department</p></div><div id="facultyData"><div class="loading"><div class="spinner"></div><p>Loading data...</p></div></div></div>
+            <div id="section-units" style="display:none;"><div class="page-header"><h2>Unit Performance Metrics</h2><p>Processing statistics for each verifying officer</p></div><div id="unitData"><div class="loading"><div class="spinner"></div><p>Loading data...</p></div></div></div>
+        </main>
+    </div>
+
+    <script src="../js/config.js"></script><script src="../js/api.js"></script><script src="../js/auth.js"></script>
+    <script>
+        if (!Auth.checkAuth() || !Auth.checkRole(['data_analyst'])) {}
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebarName').textContent = user.full_name;
+        document.getElementById('sidebarRole').textContent = 'Data Analyst';
+        loadData();
+
+        function showSection(s) { document.getElementById('section-faculty').style.display = s==='faculty'?'block':'none'; document.getElementById('section-units').style.display = s==='units'?'block':'none'; }
+
+        async function loadData() {
+            try {
+                const r = await API.getAggregatedData();
+                const data = r.data;
+                
+                // Faculty Summary
+                if(data.faculty_summary && data.faculty_summary.length) {
+                    let h = '<div class="table-container"><table><thead><tr><th>Faculty</th><th>Department</th><th>Year</th><th>Total</th><th>Completed</th><th>Pending</th><th>Rejected</th><th>Avg Hours</th></tr></thead><tbody>';
+                    data.faculty_summary.forEach(row => {
+                        h += `<tr><td>${row.faculty}</td><td>${row.department}</td><td>${row.academic_year}</td><td>${row.total_sessions}</td><td style="color:#10b981;">${row.completed}</td><td style="color:#f59e0b;">${row.pending}</td><td style="color:#ef4444;">${row.rejected}</td><td>${row.avg_completion_hours||'N/A'}</td></tr>`;
+                    });
+                    h += '</tbody></table></div>';
+                    document.getElementById('facultyData').innerHTML = h;
+                } else {
+                    document.getElementById('facultyData').innerHTML = '<p style="text-align:center;padding:40px;">No data available.</p>';
+                }
+                
+                // Unit Performance
+                if(data.unit_performance && data.unit_performance.length) {
+                    let h = '<div class="table-container"><table><thead><tr><th>Officer Role</th><th>Total Processed</th><th>Cleared</th><th>Rejected</th><th>Pending</th><th>Avg Hours</th></tr></thead><tbody>';
+                    data.unit_performance.forEach(row => {
+                        const label = CONFIG.OFFICER_LABELS[row.officer_role] || row.officer_role;
+                        h += `<tr><td>${label}</td><td>${row.total_processed}</td><td style="color:#10b981;">${row.cleared}</td><td style="color:#ef4444;">${row.rejected}</td><td style="color:#f59e0b;">${row.pending}</td><td>${row.avg_processing_hours||'N/A'}</td></tr>`;
+                    });
+                    h += '</tbody></table></div>';
+                    document.getElementById('unitData').innerHTML = h;
+                } else {
+                    document.getElementById('unitData').innerHTML = '<p style="text-align:center;padding:40px;">No data available.</p>';
+                }
+            } catch(e) {
+                document.getElementById('facultyData').innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+                document.getElementById('unitData').innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

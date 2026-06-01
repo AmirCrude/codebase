@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gate Security Dashboard - HU Clearance</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <span class="logo-icon">🎓</span>
+                <span>HU Clearance</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../index.html">Home</a>
+                <a href="#" class="active">Dashboard</a>
+                <div class="nav-user-info" id="userInfo" style="display:none;"></div>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <button class="mobile-toggle" onclick="document.getElementById('navLinks').classList.toggle('active')">☰</button>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <aside class="sidebar"><div class="sidebar-header"><h3 id="sidebarName">Officer</h3><p id="sidebarRole">Gate Security</p></div></aside>
+
+        <main class="main-content">
+            <div class="page-header"><h2>Verify Student Clearance</h2><p>Search student by ID or name to verify clearance status before exit</p></div>
+            <div class="card">
+                <div style="display:flex;gap:12px;">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Enter student ID (e.g., HU/2023/001) or name..." style="flex:1;font-size:1.1rem;">
+                    <button class="btn btn-primary btn-lg" onclick="searchStudent()">🔍 Search</button>
+                </div>
+            </div>
+            <div id="searchResult"></div>
+        </main>
+    </div>
+
+    <script src="../js/config.js"></script><script src="../js/api.js"></script><script src="../js/auth.js"></script>
+    <script>
+        if (!Auth.checkAuth() || !Auth.checkRole(['gate_security'])) {}
+        const user = Auth.getCurrentUser();
+        document.getElementById('sidebarName').textContent = user.full_name;
+        document.getElementById('sidebarRole').textContent = 'Gate Security';
+
+        async function searchStudent() {
+            const search = document.getElementById('searchInput').value.trim();
+            if(!search) { alert('Enter student ID or name.'); return; }
+            document.getElementById('searchResult').innerHTML = '<div class="loading"><div class="spinner"></div><p>Searching...</p></div>';
+            try {
+                const r = await API.searchStudent(search);
+                const data = r.data;
+                if(!data.length) { document.getElementById('searchResult').innerHTML = '<div class="alert alert-error">No student found with that ID or name.</div>'; return; }
+                let h = '';
+                data.forEach(s => {
+                    const isCleared = s.overall_status === 'final_approved';
+                    h += `<div class="search-result">
+                        <h3>${s.student_name}</h3>
+                        <p>ID: ${s.student_id} | ${s.faculty} | ${s.department} | Year: ${s.academic_year}</p>
+                        <div class="status-large ${isCleared?'cleared':'not-cleared'}">${isCleared?'✅ FULLY CLEARED - ALLOW EXIT':'❌ NOT CLEARED - DO NOT ALLOW EXIT'}</div>`;
+                    if(!isCleared && s.items) {
+                        h += '<p style="font-weight:600;margin-top:12px;">Pending/Rejected Clearances:</p>';
+                        s.items.forEach(i => {
+                            if(i.status !== 'cleared') {
+                                h += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e7eb;"><span>${CONFIG.OFFICER_LABELS[i.officer_role]||i.officer_role}</span><span class="badge ${CONFIG.STATUS_CLASSES[i.status]||'badge-pending'}">${CONFIG.STATUS_LABELS[i.status]||i.status}</span></div>`;
+                            }
+                        });
+                    }
+                    h += '</div>';
+                });
+                document.getElementById('searchResult').innerHTML = h;
+            } catch(e) { document.getElementById('searchResult').innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) { if(e.key === 'Enter') searchStudent(); });
+    </script>
+</body>
+</html>
